@@ -1,0 +1,63 @@
+steps:
+  # Шаг 1: Регистрация нового пользователя
+  - type: http
+    method: POST
+    path: /api/v1/auth/register
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: faker.email:user_email
+      password: faker.password:user_password
+      confirm_password: faker.password:user_password
+      phone_number: phone_number:user_phone
+      organization_name: faker.company:org_name
+      surname: surname:user_surname
+      name: first_name:user_name
+      role: client
+      phone_country_code: "+7"
+      country: faker.country:user_country
+      city: faker.city:user_city
+      address: faker.address:user_address
+      telegram: faker.userName:telegram_username
+      device_fingerprint: optional-device-fp
+    extract:
+      user_id: data.response.uuid
+      access_token: data.response.access_token
+
+  # Шаг 2: Вход в систему для получения свежего токена
+  - type: http
+    method: POST
+    path: /api/v1/auth/login
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: "{{user_email}}"
+      password: "{{user_password}}"
+      role: client
+      device_fingerprint: optional-device-fp
+    extract:
+      login_token: data.response.access_token
+      login_user_id: data.response.uuid
+
+  # Шаг 3: Поиск случайных товаров
+  - type: http
+    method: GET
+    path: /api/v1/client/search/random
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+    extract:
+      product_id: data.response.id
+      product_name: data.response.name
+
+  # Шаг 4: Просмотр детальной информации о товаре
+  - type: http
+    method: GET
+    path: "/api/v1/client/product/view?id={{product_id}}"
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+    extract:
+      product_details: data.response

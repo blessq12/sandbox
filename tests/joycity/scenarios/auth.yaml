@@ -1,0 +1,46 @@
+steps:
+  - type: http
+    method: POST
+    path: /api/v1/auth/register
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: faker.email:user_email
+      password: faker.password:user_password
+      confirm_password: faker.password:user_password
+      phone_number: phone_number
+      organization_name: faker.company:org_name
+      surname: surname:user_surname
+      name: first_name:user_name
+      role: client
+      phone_country_code: "+7"
+      country: faker.country:user_country
+      city: faker.city:user_city
+      address: faker.address:user_address
+      telegram: faker.userName:telegram_username
+      device_fingerprint: optional-device-fp
+    extract:
+      user_id: data.user.id
+      access_token: data.access_token
+
+  - type: http
+    method: POST
+    path: /api/v1/auth/login
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: "{{user_email}}"
+      password: "{{user_password}}"
+      role: client
+      device_fingerprint: optional-device-fp
+    extract:
+      login_token: data.access_token
+
+  - type: http
+    method: GET
+    path: /api/v1/user/profile
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"

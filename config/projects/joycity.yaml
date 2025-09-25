@@ -1,0 +1,9 @@
+name: joycity
+title: joycity
+projectRoot: /Users/andrewmaster/www/joycity
+entryPoint: entrypoint/api/index.php
+tests:
+  scenariosDir: tests/joycity/scenarios
+  routesDir: tests/joycity/routes
+env: {}
+added_at: "2025-09-25T13:58:12+00:00"

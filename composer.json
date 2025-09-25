@@ -1,15 +1,25 @@
 {
-    "name": "andrewmaster/sandbox",
-    "autoload": {
-        "psr-4": {
-            "Andrewmaster\\Sandbox\\": "src/"
-        }
-    },
-    "authors": [
-        {
-            "name": "Andrew Master",
-            "email": "code70@inbox.ru"
-        }
-    ],
-    "require": {}
+  "name": "andrewmaster/sandbox",
+  "autoload": {
+    "psr-4": {
+      "Andrewmaster\\Sandbox\\": "src/"
+    }
+  },
+  "bin": [
+    "console"
+  ],
+  "authors": [
+    {
+      "name": "Andrew Master",
+      "email": "code70@inbox.ru"
+    }
+  ],
+  "require": {
+    "symfony/console": "^7.3",
+    "symfony/yaml": "^7.3",
+    "symfony/process": "^7.3"
+  },
+  "require-dev": {
+    "fakerphp/faker": "^1.24"
+  }
 }
