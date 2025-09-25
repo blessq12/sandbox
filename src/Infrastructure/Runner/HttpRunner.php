@@ -32,10 +32,72 @@ class HttpRunner implements StepRunnerInterface
             $opts['http']['header'] = implode("\r\n", $hdrs);
         }
         if (isset($step['body'])) {
-            $body = is_array($step['body']) ? json_encode($step['body']) : (string) $step['body'];
-            $opts['http']['content'] = $body;
-            if (empty(($step['headers']['Content-Type'] ?? null))) {
-                $opts['http']['header'] = ($opts['http']['header'] ?? '') . (empty($opts['http']['header']) ? '' : "\r\n") . 'Content-Type: application/json';
+            $contentType = $step['headers']['Content-Type'] ?? null;
+
+            if ($contentType === 'multipart/form-data') {
+                // Обработка multipart/form-data для загрузки файлов
+                $boundary = '----WebKitFormBoundary' . uniqid();
+                $multipartBody = '';
+
+                foreach ($step['body'] as $key => $value) {
+                    if (is_array($value)) {
+                        // Обработка массивов
+                        foreach ($value as $index => $item) {
+                            $multipartBody .= "--{$boundary}\r\n";
+
+                            if (strpos($item, 'file:') === 0) {
+                                // Файл по пути
+                                $filePath = substr($item, 5);
+                                $fileName = basename($filePath);
+                                $fileContent = file_get_contents($filePath);
+
+                                $multipartBody .= "Content-Disposition: form-data; name=\"{$key}[]\"; filename=\"{$fileName}\"\r\n";
+                                $multipartBody .= "Content-Type: " . mime_content_type($filePath) . "\r\n\r\n";
+                                $multipartBody .= $fileContent;
+                            } else {
+                                // Обычное текстовое поле в массиве
+                                $multipartBody .= "Content-Disposition: form-data; name=\"{$key}[]\"\r\n\r\n";
+                                $multipartBody .= $item;
+                            }
+                            $multipartBody .= "\r\n";
+                        }
+                    } else {
+                        // Обычная обработка
+                        $multipartBody .= "--{$boundary}\r\n";
+
+                        if (strpos($value, 'data:') === 0) {
+                            // Base64 данные
+                            $multipartBody .= "Content-Disposition: form-data; name=\"{$key}\"\r\n";
+                            $multipartBody .= "Content-Type: application/octet-stream\r\n\r\n";
+                            $multipartBody .= base64_decode(substr($value, strpos($value, ',') + 1));
+                        } elseif (strpos($value, 'file:') === 0) {
+                            // Файл по пути
+                            $filePath = substr($value, 5);
+                            $fileName = basename($filePath);
+                            $fileContent = file_get_contents($filePath);
+
+                            $multipartBody .= "Content-Disposition: form-data; name=\"{$key}\"; filename=\"{$fileName}\"\r\n";
+                            $multipartBody .= "Content-Type: " . mime_content_type($filePath) . "\r\n\r\n";
+                            $multipartBody .= $fileContent;
+                        } else {
+                            // Обычное текстовое поле
+                            $multipartBody .= "Content-Disposition: form-data; name=\"{$key}\"\r\n\r\n";
+                            $multipartBody .= $value;
+                        }
+                        $multipartBody .= "\r\n";
+                    }
+                }
+                $multipartBody .= "--{$boundary}--\r\n";
+
+                $opts['http']['content'] = $multipartBody;
+                $opts['http']['header'] = ($opts['http']['header'] ?? '') . (empty($opts['http']['header']) ? '' : "\r\n") . "Content-Type: multipart/form-data; boundary={$boundary}";
+            } else {
+                // Обычная JSON обработка
+                $body = is_array($step['body']) ? json_encode($step['body']) : (string) $step['body'];
+                $opts['http']['content'] = $body;
+                if (empty($contentType)) {
+                    $opts['http']['header'] = ($opts['http']['header'] ?? '') . (empty($opts['http']['header']) ? '' : "\r\n") . 'Content-Type: application/json';
+                }
             }
         }
         $ctx = stream_context_create($opts);

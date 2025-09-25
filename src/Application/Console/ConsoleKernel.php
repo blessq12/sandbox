@@ -56,6 +56,12 @@ class ConsoleKernel
                 new \Andrewmaster\Sandbox\Infrastructure\Server\ServerManager(getcwd() . '/var/servers')
             ),
             __NAMESPACE__ . '\\Command\\AddProjectCommand' => new \Andrewmaster\Sandbox\Application\Console\Command\AddProjectCommand(),
+            __NAMESPACE__ . '\\Command\\ScenarioRunAllCommand' => new \Andrewmaster\Sandbox\Application\Console\Command\ScenarioRunAllCommand(
+                new \Andrewmaster\Sandbox\Infrastructure\Project\ProjectRegistry(getcwd() . '/config/projects'),
+                new \Andrewmaster\Sandbox\Infrastructure\Scenario\ScenarioLoader(),
+                new \Andrewmaster\Sandbox\Infrastructure\Storage\RunStorage(getcwd() . '/result'),
+                new \Andrewmaster\Sandbox\Infrastructure\Server\ServerManager(getcwd() . '/var/servers')
+            ),
             default => new $class(),
         };
     }

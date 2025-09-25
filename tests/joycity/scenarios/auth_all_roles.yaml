@@ -1,0 +1,149 @@
+steps:
+  # CLIENT — регистрация
+  - type: http
+    method: POST
+    path: /api/v1/auth/register
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: faker.email:client_email
+      password: faker.password:client_password
+      confirm_password: faker.password:client_password
+      phone_number: phone_number:client_phone
+      organization_name: faker.company:client_org
+      surname: surname:client_surname
+      name: first_name:client_name
+      role: client
+      phone_country_code: "+7"
+      telegram: faker.userName:client_telegram
+      device_fingerprint: optional-device-fp
+    extract:
+      client_user_id: data.response.uuid
+      client_access_token: data.response.access_token
+
+  # CLIENT — логин
+  - type: http
+    method: POST
+    path: /api/v1/auth/login
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: "{{client_email}}"
+      password: "{{client_password}}"
+      role: client
+      device_fingerprint: optional-device-fp
+    extract:
+      client_login_token: data.response.access_token
+      client_login_user_id: data.response.uuid
+
+  # CLIENT — профиль
+  - type: http
+    method: GET
+    path: /api/v1/client/profile/self
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{client_login_token}}"
+
+  # BUYER — регистрация
+  - type: http
+    method: POST
+    path: /api/v1/auth/register
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: faker.email:buyer_email
+      password: faker.password:buyer_password
+      confirm_password: faker.password:buyer_password
+      phone_number: phone_number:buyer_phone
+      organization_name: faker.company:buyer_org
+      surname: surname:buyer_surname
+      name: first_name:buyer_name
+      role: buyer
+      phone_country_code: "+7"
+      country: faker.country:buyer_country
+      city: faker.city:buyer_city
+      address: faker.streetAddress:buyer_address
+      telegram: faker.userName:buyer_telegram
+      device_fingerprint: optional-device-fp
+    extract:
+      buyer_user_id: data.response.uuid
+      buyer_access_token: data.response.access_token
+
+  # BUYER — логин
+  - type: http
+    method: POST
+    path: /api/v1/auth/login
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: "{{buyer_email}}"
+      password: "{{buyer_password}}"
+      role: buyer
+      device_fingerprint: optional-device-fp
+    extract:
+      buyer_login_token: data.response.access_token
+      buyer_login_user_id: data.response.uuid
+
+  # BUYER — профиль
+  - type: http
+    method: GET
+    path: /api/v1/buyer/profile/self
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{buyer_login_token}}"
+
+  # FULFILLMENT — регистрация
+  - type: http
+    method: POST
+    path: /api/v1/auth/register
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: faker.email:fulfillment_email
+      password: faker.password:fulfillment_password
+      confirm_password: faker.password:fulfillment_password
+      phone_number: phone_number:fulfillment_phone
+      organization_name: faker.company:fulfillment_org
+      surname: surname:fulfillment_surname
+      name: first_name:fulfillment_name
+      role: fulfillment
+      phone_country_code: "+7"
+      country: faker.country:fulfillment_country
+      city: faker.city:fulfillment_city
+      address: faker.streetAddress:fulfillment_address
+      telegram: faker.userName:fulfillment_telegram
+      device_fingerprint: optional-device-fp
+    extract:
+      fulfillment_user_id: data.response.uuid
+      fulfillment_access_token: data.response.access_token
+
+  # FULFILLMENT — логин
+  - type: http
+    method: POST
+    path: /api/v1/auth/login
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: "{{fulfillment_email}}"
+      password: "{{fulfillment_password}}"
+      role: fulfillment
+      device_fingerprint: optional-device-fp
+    extract:
+      fulfillment_login_token: data.response.access_token
+      fulfillment_login_user_id: data.response.uuid
+
+  # FULFILLMENT — профиль
+  - type: http
+    method: GET
+    path: /api/v1/fulfillment/profile/self
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{fulfillment_login_token}}"
+
+  # Роль manager исключена: регистрация отклоняется сервером

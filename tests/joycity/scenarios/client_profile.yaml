@@ -1,0 +1,83 @@
+steps:
+  # Регистрация клиента
+  - type: http
+    method: POST
+    path: /api/v1/auth/register
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: faker.email:client_email
+      password: faker.password:client_password
+      confirm_password: faker.password:client_password
+      phone_number: phone_number:client_phone
+      organization_name: faker.company:client_org
+      surname: surname:client_surname
+      name: first_name:client_name
+      role: client
+      phone_country_code: "+7"
+      telegram: faker.userName:client_telegram
+      device_fingerprint: optional-device-fp
+    extract:
+      client_user_id: data.response.uuid
+      client_access_token: data.response.access_token
+
+  # Логин клиента
+  - type: http
+    method: POST
+    path: /api/v1/auth/login
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: "{{client_email}}"
+      password: "{{client_password}}"
+      role: client
+      device_fingerprint: optional-device-fp
+    extract:
+      login_token: data.response.access_token
+      login_user_id: data.response.uuid
+
+  # GET /api/v1/client/profile/self - получить данные своего профиля
+  - type: http
+    method: GET
+    path: /api/v1/client/profile/self
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+
+  # PUT /api/v1/client/profile/update - обновить профиль
+  - type: http
+    method: PUT
+    path: /api/v1/client/profile/update
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      name: faker.firstName:updated_name
+      surname: faker.lastName:updated_surname
+      phone_number: phone_number:client_phone
+      organization_name: faker.company:updated_org
+      phone_country_code: "RU"
+      telegram: faker.userName:updated_telegram
+
+  # POST /api/v1/client/profile/upload-avatar - загрузить аватар
+  - type: http
+    method: POST
+    path: /api/v1/client/profile/upload-avatar
+    headers:
+      Accept: application/json
+      Content-Type: multipart/form-data
+      Authorization: "Bearer {{login_token}}"
+    body:
+      images:
+        - "file:/Users/andrewmaster/www/sandbox/test-avatar.png"
+
+  # DELETE /api/v1/client/profile/delete - удалить профиль
+  - type: http
+    method: DELETE
+    path: /api/v1/client/profile/delete
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"

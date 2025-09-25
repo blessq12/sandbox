@@ -13,6 +13,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -32,6 +33,7 @@ class ScenarioRunCommand extends Command
     {
         $this->addArgument('project', InputArgument::REQUIRED, 'Имя проекта');
         $this->addArgument('scenario', InputArgument::REQUIRED, 'Имя сценария');
+        $this->addOption('save-report', null, InputOption::VALUE_NONE, 'Сохранить детальный отчет в файл');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -39,6 +41,7 @@ class ScenarioRunCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $projectName = (string) $input->getArgument('project');
         $scenarioName = (string) $input->getArgument('scenario');
+        $saveReport = $input->getOption('save-report');
 
         $project = $this->registry->get($projectName);
         if (!$project) {
@@ -52,8 +55,6 @@ class ScenarioRunCommand extends Command
             $io->error('Сценарий не найден: ' . $scenarioName);
             return Command::FAILURE;
         }
-
-        $orchestrator = new Orchestrator([new HttpRunner(), new CliRunner()]);
 
         $context = [];
         $startedByUs = false;
@@ -69,19 +70,101 @@ class ScenarioRunCommand extends Command
             }
         }
 
-        $result = $orchestrator->runScenario($scenario, $context);
-        $file = $this->storage->save([
-            'project' => $projectName,
-            'scenario' => $scenarioName,
-            'result' => $result,
-            'ts' => date('c'),
+        // Показываем прогресс выполнения
+        $io->section("Выполнение сценария: {$projectName}/{$scenarioName}");
+        $progressBar = $io->createProgressBar(count($scenario->steps));
+        $progressBar->setFormat(' %current%/%max% [%bar%] %percent:3s%% %message%');
+        $progressBar->start();
+
+        $stepResults = [];
+        $orchestrator = new Orchestrator([new HttpRunner(), new CliRunner()]);
+        $result = $orchestrator->runScenario($scenario, $context, function ($stepIndex, $stepResult, $stepType) use ($progressBar, &$stepResults, $io) {
+            $status = $stepResult['ok'] ? '✓' : '✗';
+            $duration = $stepResult['duration_ms'] ?? 0;
+
+            // Собираем детали для краткого отчета
+            $stepInfo = [
+                'index' => $stepIndex,
+                'type' => $stepType,
+                'status' => $status,
+                'duration' => $duration,
+                'ok' => $stepResult['ok'] ?? false
+            ];
+
+            // Добавляем HTTP статус если есть
+            if (isset($stepResult['status'])) {
+                $stepInfo['http_status'] = $stepResult['status'];
+            }
+
+            // Добавляем ошибку если есть
+            if (isset($stepResult['error'])) {
+                $stepInfo['error'] = $stepResult['error'];
+            }
+
+            $stepResults[] = $stepInfo;
+
+            $progressBar->setMessage("Шаг {$stepIndex}: {$stepType} {$status} ({$duration}ms)");
+            $progressBar->advance();
+        });
+
+        $progressBar->finish();
+        $io->newLine(2);
+
+        // Показываем краткий отчет по шагам
+        $io->section('Результаты выполнения шагов:');
+        $stepTable = [];
+        foreach ($stepResults as $step) {
+            $row = [
+                'Шаг ' . $step['index'],
+                $step['type'],
+                $step['status'],
+                $step['duration'] . 'мс'
+            ];
+
+            if (isset($step['http_status'])) {
+                $row[] = 'HTTP ' . $step['http_status'];
+            } else {
+                $row[] = '-';
+            }
+
+            if (isset($step['error'])) {
+                $row[] = substr($step['error'], 0, 50) . (strlen($step['error']) > 50 ? '...' : '');
+            } else {
+                $row[] = '-';
+            }
+
+            $stepTable[] = $row;
+        }
+
+        $io->table(['Шаг', 'Тип', 'Статус', 'Время', 'HTTP', 'Ошибка'], $stepTable);
+
+        // Показываем краткую статистику
+        $metrics = $result['metrics'] ?? [];
+        $io->table(['Метрика', 'Значение'], [
+            ['Общее время', ($metrics['scenario']['total_duration_seconds'] ?? 0) . 'с'],
+            ['Шагов выполнено', ($metrics['steps']['count'] ?? 0)],
+            ['Успешных', ($metrics['steps']['successful'] ?? 0)],
+            ['Неудачных', ($metrics['steps']['failed'] ?? 0)],
+            ['Среднее время шага', ($metrics['steps']['average_duration_ms'] ?? 0) . 'мс'],
         ]);
 
-        $io->success('Сценарий выполнен. Результат: ' . $file);
+        // Сохраняем отчет только если указан флаг
+        if ($saveReport) {
+            $file = $this->storage->save([
+                'project' => $projectName,
+                'scenario' => $scenarioName,
+                'result' => $result,
+                'ts' => date('c'),
+            ]);
+            $io->success('Отчет сохранен: ' . $file);
+        }
 
         if ($this->servers && $startedByUs) {
             $this->servers->stop($project);
         }
+
+        $success = $result['ok'] ? '✓' : '✗';
+        $io->text("Результат: {$success}");
         return $result['ok'] ? Command::SUCCESS : Command::FAILURE;
     }
 }

@@ -20,8 +20,9 @@ class Orchestrator
     }
 
     /** @return array<string, mixed> */
-    public function runScenario(Scenario $scenario, array $context = []): array
+    public function runScenario(Scenario $scenario, array $context = [], ?callable $progressCallback = null): array
     {
+        $scenarioStartTime = microtime(true);
         $results = [];
         $faker = new FakerResolver($context['locale'] ?? null);
         $stepContext = $context; // Контекст для передачи между шагами
@@ -44,16 +45,28 @@ class Orchestrator
             $result = $runner->run($resolvedStep, $stepContext);
             $results[] = $result;
 
+            // Вызываем callback прогресса если передан
+            if ($progressCallback !== null) {
+                $progressCallback($index, $result, $type);
+            }
+
             // Извлекаем переменные из ответа для следующих шагов
             if ($result['ok'] && isset($step['extract'])) {
                 $extracted = $this->extractVariables($result, $step['extract']);
                 $stepContext = array_merge($stepContext, $extracted);
             }
         }
+
+        $scenarioDurationMs = (int) ((microtime(true) - $scenarioStartTime) * 1000);
+
+        // Собираем метрики времени выполнения
+        $timingMetrics = $this->calculateTimingMetrics($results, $scenarioDurationMs);
+
         return [
             'ok' => !in_array(false, array_column($results, 'ok'), true),
             'steps' => $results,
             'context' => $stepContext, // Возвращаем финальный контекст
+            'metrics' => $timingMetrics,
         ];
     }
 
@@ -142,5 +155,57 @@ class Orchestrator
         }
 
         return $current;
+    }
+
+    /**
+     * Вычисляет метрики времени выполнения сценария
+     * @param array<array<string, mixed>> $results
+     * @param int $scenarioDurationMs
+     * @return array<string, mixed>
+     */
+    private function calculateTimingMetrics(array $results, int $scenarioDurationMs): array
+    {
+        $stepDurations = [];
+        $totalStepDuration = 0;
+        $successfulSteps = 0;
+        $failedSteps = 0;
+
+        foreach ($results as $index => $result) {
+            $duration = $result['duration_ms'] ?? 0;
+            $stepDurations[] = [
+                'step' => $index,
+                'duration_ms' => $duration,
+                'success' => $result['ok'] ?? false,
+            ];
+
+            $totalStepDuration += $duration;
+
+            if ($result['ok'] ?? false) {
+                $successfulSteps++;
+            } else {
+                $failedSteps++;
+            }
+        }
+
+        $avgStepDuration = count($stepDurations) > 0 ? (int) ($totalStepDuration / count($stepDurations)) : 0;
+        $minStepDuration = count($stepDurations) > 0 ? min(array_column($stepDurations, 'duration_ms')) : 0;
+        $maxStepDuration = count($stepDurations) > 0 ? max(array_column($stepDurations, 'duration_ms')) : 0;
+
+        return [
+            'scenario' => [
+                'total_duration_ms' => $scenarioDurationMs,
+                'total_duration_seconds' => round($scenarioDurationMs / 1000, 3),
+            ],
+            'steps' => [
+                'count' => count($stepDurations),
+                'successful' => $successfulSteps,
+                'failed' => $failedSteps,
+                'total_duration_ms' => $totalStepDuration,
+                'average_duration_ms' => $avgStepDuration,
+                'min_duration_ms' => $minStepDuration,
+                'max_duration_ms' => $maxStepDuration,
+            ],
+            'step_details' => $stepDurations,
+        ];
     }
 }
