@@ -1,0 +1,23 @@
+steps:
+  # Загрузка файла
+  - type: http
+    method: POST
+    path: /api/v1/upload
+    headers:
+      Accept: application/json
+      Content-Type: multipart/form-data
+      Authorization: "Bearer {{token}}"
+    body:
+      file: "file:/Users/andrewmaster/www/sandbox/test-avatar.png"
+      description: faker.sentence:upload_desc
+    extract:
+      file_id: data.response.file_id
+      file_url: data.response.url
+
+  # Проверка загруженного файла
+  - type: http
+    method: GET
+    path: /api/v1/files/{{file_id}}
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{token}}"

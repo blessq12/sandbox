@@ -1,0 +1,71 @@
+steps:
+  # Получение доступных продуктов
+  - type: http
+    method: GET
+    path: /api/available-products
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+    extract:
+      available_product_id: data.response.products[0].id
+
+  # Поиск товаров
+  - type: http
+    method: GET
+    path: /api/goods/search
+    headers:
+      Accept: application/json
+    body:
+      query: faker.word:search_query
+    extract:
+      search_product_id: data.response.products[0].id
+
+  # Обновление порядка категорий
+  - type: http
+    method: POST
+    path: /api/update-category-order
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      categories:
+        - id: "{{category_id}}"
+          order: faker.numberBetween:category_order
+
+  # Обновление порядка продуктов
+  - type: http
+    method: POST
+    path: /api/update-product-order
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      products:
+        - id: "{{available_product_id}}"
+          order: faker.numberBetween:product_order
+
+  # Добавление продукта в категорию
+  - type: http
+    method: POST
+    path: /api/add-product-to-category
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      product_id: "{{available_product_id}}"
+      category_id: "{{category_id}}"
+
+  # Удаление продукта из категории
+  - type: http
+    method: POST
+    path: /api/remove-product-from-category
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      product_id: "{{available_product_id}}"
+      category_id: "{{category_id}}"

@@ -1,0 +1,96 @@
+steps:
+  # Авторизация в Yandex Food API
+  - type: http
+    method: POST
+    path: /api/yandex-food/security/oauth/token
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      grant_type: "client_credentials"
+      client_id: faker.uuid:yandex_client_id
+      client_secret: faker.password:yandex_secret
+    extract:
+      yandex_token: data.response.access_token
+
+  # Получение ресторанов
+  - type: http
+    method: GET
+    path: /api/yandex-food/restaurants
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{yandex_token}}"
+    extract:
+      restaurant_id: data.response.restaurants[0].id
+
+  # Получение состава меню
+  - type: http
+    method: GET
+    path: /api/yandex-food/menu/{{restaurant_id}}/composition
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{yandex_token}}"
+
+  # Получение доступности меню
+  - type: http
+    method: GET
+    path: /api/yandex-food/menu/{{restaurant_id}}/availability
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{yandex_token}}"
+
+  # Получение промо меню
+  - type: http
+    method: GET
+    path: /api/yandex-food/menu/{{restaurant_id}}/promos
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{yandex_token}}"
+
+  # Создание заказа в Yandex Food
+  - type: http
+    method: POST
+    path: /api/yandex-food/order
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{yandex_token}}"
+    body:
+      restaurant_id: "{{restaurant_id}}"
+      items:
+        - menu_item_id: faker.numberBetween:menu_item_id
+          quantity: faker.numberBetween:yandex_quantity
+      delivery_address: "{{client_address}}"
+      delivery_time: faker.dateTime:yandex_delivery_time
+    extract:
+      yandex_order_id: data.response.order.id
+
+  # Получение заказа по ID
+  - type: http
+    method: GET
+    path: /api/yandex-food/order/{{yandex_order_id}}
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{yandex_token}}"
+
+  # Получение статуса заказа
+  - type: http
+    method: GET
+    path: /api/yandex-food/order/{{yandex_order_id}}/status
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{yandex_token}}"
+
+  # Обновление заказа
+  - type: http
+    method: PUT
+    path: /api/yandex-food/order/{{yandex_order_id}}/
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{yandex_token}}"
+    body:
+      items:
+        - menu_item_id: "{{menu_item_id}}"
+          quantity: faker.numberBetween:updated_yandex_quantity
+      delivery_address: "Updated {{client_address}}"

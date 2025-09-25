@@ -1,0 +1,73 @@
+steps:
+  # Регистрация клиента
+  - type: http
+    method: POST
+    path: /api/auth/register
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      name: first_name:client_name
+      email: faker.email:client_email
+      phone: phone_number:client_phone
+      password: faker.password:client_password
+    extract:
+      client_id: data.response.user.id
+      client_token: data.response.token
+
+  # Логин клиента
+  - type: http
+    method: POST
+    path: /api/auth/login
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: "{{client_email}}"
+      password: "{{client_password}}"
+    extract:
+      login_token: data.response.token
+      login_user_id: data.response.user.id
+
+  # Получение данных пользователя
+  - type: http
+    method: GET
+    path: /api/auth/get-user
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+
+  # Получение расширенных данных пользователя
+  - type: http
+    method: GET
+    path: /api/auth/get-user-data
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+
+  # Обновление данных пользователя
+  - type: http
+    method: PATCH
+    path: /api/auth/update-user
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      name: "Updated {{client_name}}"
+      phone: phone_number:updated_phone
+
+  # Добавление адреса
+  - type: http
+    method: POST
+    path: /api/auth/add-address
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      address: faker.address:client_address
+      city: faker.city:client_city
+      postal_code: faker.postcode:client_postal
+    extract:
+      address_id: data.response.address.id

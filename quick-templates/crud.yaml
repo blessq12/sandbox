@@ -1,0 +1,51 @@
+steps:
+  # Создание
+  - type: http
+    method: POST
+    path: /api/v1/items
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{token}}"
+    body:
+      title: faker.sentence:item_title
+      description: faker.text:item_description
+      price: faker.numberBetween:item_price
+    extract:
+      item_id: data.response.id
+
+  # Получение списка
+  - type: http
+    method: GET
+    path: /api/v1/items
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{token}}"
+
+  # Получение одного
+  - type: http
+    method: GET
+    path: /api/v1/items/{{item_id}}
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{token}}"
+
+  # Обновление
+  - type: http
+    method: PUT
+    path: /api/v1/items/{{item_id}}
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{token}}"
+    body:
+      title: "Updated {{item_title}}"
+      description: "Updated {{item_description}}"
+
+  # Удаление
+  - type: http
+    method: DELETE
+    path: /api/v1/items/{{item_id}}
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{token}}"

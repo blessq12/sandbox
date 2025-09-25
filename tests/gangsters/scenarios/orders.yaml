@@ -1,0 +1,64 @@
+steps:
+  # Получение моих заказов
+  - type: http
+    method: GET
+    path: /api/orders/get-my-orders
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+
+  # Получение моих монет
+  - type: http
+    method: GET
+    path: /api/orders/get-my-coins
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+
+  # Создание заказа
+  - type: http
+    method: POST
+    path: /api/orders/create
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      items:
+        - product_id: faker.numberBetween:product_id
+          quantity: faker.numberBetween:item_quantity
+      delivery_address: "{{client_address}}"
+      delivery_time: faker.dateTime:delivery_time
+      payment_method: "card"
+    extract:
+      order_id: data.response.order.id
+      order_total: data.response.order.total
+
+  # Проверка доступности
+  - type: http
+    method: POST
+    path: /api/orders/check-avalibility
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      items:
+        - product_id: "{{product_id}}"
+          quantity: "{{item_quantity}}"
+      delivery_address: "{{client_address}}"
+
+  # Обновление заказа
+  - type: http
+    method: POST
+    path: /api/orders/update
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      order_id: "{{order_id}}"
+      items:
+        - product_id: "{{product_id}}"
+          quantity: faker.numberBetween:updated_quantity
+      delivery_address: "Updated {{client_address}}"

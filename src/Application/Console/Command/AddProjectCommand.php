@@ -13,7 +13,7 @@ use Symfony\Component\Yaml\Yaml;
 
 #[AsCommand(
     name: 'project:add',
-    description: 'Создает symlink на директорию проекта в ./test-projects и YAML-конфиг в ./config/projects',
+    description: 'Создает symlink на директорию проекта в ./projects и YAML-конфиг в ./config/projects',
 )]
 class AddProjectCommand extends Command
 {
@@ -25,7 +25,7 @@ class AddProjectCommand extends Command
             ->addOption('title', null, InputOption::VALUE_OPTIONAL, 'Человекочитаемый заголовок', null)
             ->addOption('entry-point', null, InputOption::VALUE_OPTIONAL, 'Относительный путь к entry point (index.php)')
             ->addOption('entry', null, InputOption::VALUE_OPTIONAL, 'DEPRECATED: используйте --entry-point')
-            ->addOption('no-link', null, InputOption::VALUE_NONE, 'Не создавать symlink в test-projects')
+            ->addOption('no-link', null, InputOption::VALUE_NONE, 'Не создавать symlink в projects')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Перезаписать существующие артефакты (конфиг, symlink, директории)');
     }
 
@@ -48,13 +48,13 @@ class AddProjectCommand extends Command
             return Command::FAILURE;
         }
 
-        $projectsDir = getcwd() . DIRECTORY_SEPARATOR . 'test-projects';
+        $projectsDir = getcwd() . DIRECTORY_SEPARATOR . 'projects';
         $symlinkPath = $projectsDir . DIRECTORY_SEPARATOR . $name;
 
         if (!$noLink) {
             if (!is_dir($projectsDir)) {
                 if (!mkdir($projectsDir, 0775, true) && !is_dir($projectsDir)) {
-                    $io->error('Не удалось создать директорию test-projects');
+                    $io->error('Не удалось создать директорию projects');
                     return Command::FAILURE;
                 }
             }

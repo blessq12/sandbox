@@ -1,0 +1,25 @@
+steps:
+  # Получение информации о компании
+  - type: http
+    method: GET
+    path: /api/telegram/get-company
+    headers:
+      Accept: application/json
+
+  # Получение категорий продуктов
+  - type: http
+    method: GET
+    path: /api/telegram/get-product-categories
+    headers:
+      Accept: application/json
+    extract:
+      category_id: data.response.categories[0].id
+
+  # Получение продуктов
+  - type: http
+    method: GET
+    path: /api/telegram/get-products
+    headers:
+      Accept: application/json
+    extract:
+      product_id: data.response.products[0].id

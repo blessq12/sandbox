@@ -1,0 +1,9 @@
+name: gangsters
+title: 'Gangsters API'
+projectRoot: /Users/andrewmaster/www/gangsters
+entryPoint: public/index.php
+tests:
+  scenariosDir: tests/gangsters/scenarios
+  routesDir: tests/gangsters/routes
+env: {  }
+added_at: '2025-09-25T17:32:07+00:00'

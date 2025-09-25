@@ -1,0 +1,57 @@
+steps:
+  # 1. Регистрация пользователя
+  - type: http
+    method: POST
+    path: /api/v1/auth/register
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: faker.email:user_email
+      password: faker.password:user_password
+      name: first_name:user_name
+    extract:
+      user_token: data.response.access_token
+      user_id: data.response.uuid
+
+  # 2. Создание ресурса
+  - type: http
+    method: POST
+    path: /api/v1/resources
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{user_token}}"
+    body:
+      title: faker.sentence:resource_title
+      content: faker.text:resource_content
+    extract:
+      resource_id: data.response.id
+
+  # 3. Получение ресурса
+  - type: http
+    method: GET
+    path: /api/v1/resources/{{resource_id}}
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{user_token}}"
+
+  # 4. Обновление ресурса
+  - type: http
+    method: PUT
+    path: /api/v1/resources/{{resource_id}}
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{user_token}}"
+    body:
+      title: "Updated {{resource_title}}"
+      content: "Updated {{resource_content}}"
+
+  # 5. Удаление ресурса
+  - type: http
+    method: DELETE
+    path: /api/v1/resources/{{resource_id}}
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{user_token}}"
