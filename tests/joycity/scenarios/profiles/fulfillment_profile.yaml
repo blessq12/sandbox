@@ -49,7 +49,7 @@ steps:
       Accept: application/json
       Authorization: "Bearer {{login_token}}"
 
-  # PUT /api/v1/fulfillment/profile/update - обновить профиль
+  # PUT /api/v1/fulfillment/profile/update - обновить имя и фамилию
   - type: http
     method: PUT
     path: /api/v1/fulfillment/profile/update
@@ -60,11 +60,49 @@ steps:
     body:
       name: "Сидор"
       surname: "Сидоров"
+
+  # PUT /api/v1/fulfillment/profile/update - обновить телефон
+  - type: http
+    method: PUT
+    path: /api/v1/fulfillment/profile/update
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
       phone_number: phone_number:updated_phone
-      organization_name: "Склад Фулфилмент"
       phone_country_code: "RU"
+
+  # PUT /api/v1/fulfillment/profile/update - обновить организацию
+  - type: http
+    method: PUT
+    path: /api/v1/fulfillment/profile/update
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      organization_name: "Склад Фулфилмент"
+
+  # PUT /api/v1/fulfillment/profile/update - обновить город и страну
+  - type: http
+    method: PUT
+    path: /api/v1/fulfillment/profile/update
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
       city: "Санкт-Петербург"
       country: "Россия"
+
+  # GET /api/v1/fulfillment/profile/self - проверить финальное состояние
+  - type: http
+    method: GET
+    path: /api/v1/fulfillment/profile/self
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
 
   # POST /api/v1/fulfillment/profile/upload-avatar - загрузить аватар
   - type: http

@@ -1,0 +1,147 @@
+steps:
+  # BUYER — регистрация
+  - type: http
+    method: POST
+    path: /api/v1/auth/register
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: faker.email:buyer_email
+      password: faker.password:buyer_password
+      confirm_password: faker.password:buyer_password
+      phone_number: phone_number:buyer_phone
+      organization_name: faker.company:buyer_org
+      surname: surname:buyer_surname
+      name: first_name:buyer_name
+      role: buyer
+      phone_country_code: "+7"
+      country: faker.country:buyer_country
+      city: faker.city:buyer_city
+      address: faker.streetAddress:buyer_address
+      telegram: faker.userName:buyer_telegram
+      device_fingerprint: optional-device-fp
+    extract:
+      buyer_user_id: data.response.uuid
+      buyer_access_token: data.response.access_token
+
+  # BUYER — логин
+  - type: http
+    method: POST
+    path: /api/v1/auth/login
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: "{{buyer_email}}"
+      password: "{{buyer_password}}"
+      role: buyer
+      device_fingerprint: optional-device-fp
+    extract:
+      buyer_login_token: data.response.access_token
+      buyer_login_user_id: data.response.uuid
+
+  # BUYER — создание товара
+  - type: http
+    method: POST
+    path: /api/v1/buyer/product/create
+    headers:
+      Accept: application/json
+      Content-Type: multipart/form-data
+      Authorization: "Bearer {{buyer_login_token}}"
+    body:
+      name: faker.sentence:product_name
+      description: faker.text:product_description
+      subcategory_id: 1
+
+      range_1_min: 1
+      range_1_max: 100
+      range_1_price: 99.99
+
+      range_2_min: 101
+      range_2_max: 500
+      range_2_price: 89.99
+
+      range_3_min: 501
+      range_3_max: 1000
+      range_3_price: 79.99
+
+      range_4_min: 1001
+      range_4_max: 5000
+      range_4_price: 69.99
+
+      product_height: faker.number_between:product_height
+      product_width: faker.number_between:product_width
+      product_depth: faker.number_between:product_depth
+      product_weight: faker.number_between:product_weight
+
+      # Изображения (multipart массив)
+      images:
+        - "file:/Users/andrewmaster/www/sandbox/test-avatar.png"
+        - "file:/Users/andrewmaster/www/sandbox/test-avatar.png"
+        - "file:/Users/andrewmaster/www/sandbox/test-avatar.png"
+
+    extract:
+      product_id: data.response.info.id
+
+  # BUYER — просмотр товара
+  - type: http
+    method: GET
+    path: /api/v1/buyer/product/view?id={{product_id}}
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{buyer_login_token}}"
+
+  # BUYER — обновление товара
+  - type: http
+    method: PUT
+    path: /api/v1/buyer/product/update?id={{product_id}}
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{buyer_login_token}}"
+    body:
+      id: "{{product_id}}"
+      name: faker.sentence:updated_product_name
+      description: faker.text:updated_product_description
+      subcategory_id: 2
+
+      range_1_min: 1
+      range_1_max: 200
+      range_1_price: 95.99
+
+      range_2_min: 201
+      range_2_max: 1000
+      range_2_price: 85.99
+
+      range_3_min: 1001
+      range_3_max: 5000
+      range_3_price: 75.99
+
+      range_4_min: 5001
+      range_4_max: 10000
+      range_4_price: 65.99
+
+      product_height: faker.number_between:updated_product_height
+      product_width: faker.number_between:updated_product_width
+      product_depth: faker.number_between:updated_product_depth
+      product_weight: faker.number_between:updated_product_weight
+
+  # BUYER — список своих товаров (offset/limit)
+  - type: http
+    method: GET
+    path: /api/v1/buyer/product/my?offset=0&limit=20
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{buyer_login_token}}"
+
+  # BUYER — удаление товара
+  - type: http
+    method: DELETE
+    path: /api/v1/buyer/product/delete?id={{product_id}}
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{buyer_login_token}}"
+    body:
+      id: "{{product_id}}"

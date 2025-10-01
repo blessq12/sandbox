@@ -41,27 +41,20 @@ class ConsoleKernel
 
     private static function make(string $class): object
     {
+        $registry = new \Andrewmaster\Sandbox\Infrastructure\Project\ProjectRegistry(getcwd() . '/config/projects');
+        $loader = new \Andrewmaster\Sandbox\Infrastructure\Scenario\ScenarioLoader();
+        $repository = new \Andrewmaster\Sandbox\Domain\Scenario\ScenarioRepository($loader);
+        $storage = new \Andrewmaster\Sandbox\Infrastructure\Storage\RunStorage(getcwd() . '/result');
+        $serverManager = new \Andrewmaster\Sandbox\Infrastructure\Server\ServerManager(getcwd() . '/var/servers');
+
         return match ($class) {
-            __NAMESPACE__ . '\\Command\\ProjectListCommand' => new \Andrewmaster\Sandbox\Application\Console\Command\ProjectListCommand(
-                new \Andrewmaster\Sandbox\Infrastructure\Project\ProjectRegistry(getcwd() . '/config/projects')
-            ),
-            __NAMESPACE__ . '\\Command\\ScenarioListCommand' => new \Andrewmaster\Sandbox\Application\Console\Command\ScenarioListCommand(
-                new \Andrewmaster\Sandbox\Infrastructure\Project\ProjectRegistry(getcwd() . '/config/projects'),
-                new \Andrewmaster\Sandbox\Infrastructure\Scenario\ScenarioLoader()
-            ),
-            __NAMESPACE__ . '\\Command\\ScenarioRunCommand' => new \Andrewmaster\Sandbox\Application\Console\Command\ScenarioRunCommand(
-                new \Andrewmaster\Sandbox\Infrastructure\Project\ProjectRegistry(getcwd() . '/config/projects'),
-                new \Andrewmaster\Sandbox\Infrastructure\Scenario\ScenarioLoader(),
-                new \Andrewmaster\Sandbox\Infrastructure\Storage\RunStorage(getcwd() . '/result'),
-                new \Andrewmaster\Sandbox\Infrastructure\Server\ServerManager(getcwd() . '/var/servers')
-            ),
+            __NAMESPACE__ . '\\Command\\ProjectListCommand' => new \Andrewmaster\Sandbox\Application\Console\Command\ProjectListCommand($registry),
+            __NAMESPACE__ . '\\Command\\ScenarioListCommand' => new \Andrewmaster\Sandbox\Application\Console\Command\ScenarioListCommand($registry, $repository),
+            __NAMESPACE__ . '\\Command\\ScenarioRunCommand' => new \Andrewmaster\Sandbox\Application\Console\Command\ScenarioRunCommand($registry, $loader, $storage, $serverManager),
             __NAMESPACE__ . '\\Command\\AddProjectCommand' => new \Andrewmaster\Sandbox\Application\Console\Command\AddProjectCommand(),
-            __NAMESPACE__ . '\\Command\\ScenarioRunAllCommand' => new \Andrewmaster\Sandbox\Application\Console\Command\ScenarioRunAllCommand(
-                new \Andrewmaster\Sandbox\Infrastructure\Project\ProjectRegistry(getcwd() . '/config/projects'),
-                new \Andrewmaster\Sandbox\Infrastructure\Scenario\ScenarioLoader(),
-                new \Andrewmaster\Sandbox\Infrastructure\Storage\RunStorage(getcwd() . '/result'),
-                new \Andrewmaster\Sandbox\Infrastructure\Server\ServerManager(getcwd() . '/var/servers')
-            ),
+            __NAMESPACE__ . '\\Command\\ScenarioRunAllCommand' => new \Andrewmaster\Sandbox\Application\Console\Command\ScenarioRunAllCommand($registry, $loader, $storage, $serverManager),
+            __NAMESPACE__ . '\\Command\\ScenarioGroupsCommand' => new \Andrewmaster\Sandbox\Application\Console\Command\ScenarioGroupsCommand($registry, $repository),
+            __NAMESPACE__ . '\\Command\\ScenarioRunGroupCommand' => new \Andrewmaster\Sandbox\Application\Console\Command\ScenarioRunGroupCommand($registry, $repository, $storage, $serverManager),
             default => new $class(),
         };
     }

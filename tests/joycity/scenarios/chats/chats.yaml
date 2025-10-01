@@ -1,0 +1,142 @@
+steps:
+  # CHAT — регистрация пользователя (buyer)
+  - type: http
+    method: POST
+    path: /api/v1/auth/register
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: faker.email:chat_user_email
+      password: faker.password:chat_user_password
+      confirm_password: faker.password:chat_user_password
+      phone_number: phone_number:chat_user_phone
+      organization_name: faker.company:chat_org
+      surname: surname:chat_user_surname
+      name: first_name:chat_user_name
+      role: buyer
+      phone_country_code: "+7"
+      country: faker.country:chat_user_country
+      city: faker.city:chat_user_city
+      address: faker.streetAddress:chat_user_address
+      telegram: faker.userName:chat_user_telegram
+      device_fingerprint: chat-device-fp
+    extract:
+      chat_user_id: data.response.uuid
+      chat_access_token: data.response.access_token
+
+  # CHAT — авторизация пользователя (buyer)
+  - type: http
+    method: POST
+    path: /api/v1/auth/login
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: "{{chat_user_email}}"
+      password: "{{chat_user_password}}"
+      role: buyer
+      device_fingerprint: chat-device-fp
+    extract:
+      chat_login_token: data.response.access_token
+
+  # CHAT — получение списка чатов
+  - type: http
+    method: GET
+    path: /api/v1/chat/get-chats?perPage=20&page=1
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{chat_login_token}}"
+    extract:
+      first_chat_id: data.response.data.0.id
+
+  # CHAT — поиск чатов
+  - type: http
+    method: GET
+    path: /api/v1/chat/search-chats?query=test
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{chat_login_token}}"
+
+  # CHAT — получение непрочитанных сообщений
+  - type: http
+    method: GET
+    path: /api/v1/chat/get-unread-messages
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{chat_login_token}}"
+
+  # CHAT — отправка текстового сообщения
+  - type: http
+    method: POST
+    path: /api/v1/chat/send-message
+    headers:
+      Accept: application/json
+      Content-Type: multipart/form-data
+      Authorization: "Bearer {{chat_login_token}}"
+    body:
+      chat_id: "{{first_chat_id}}"
+      content: faker.sentence:message_content
+      type: text
+    extract:
+      sent_message_id: data.response.id
+
+  # CHAT — отправка сообщения с изображением
+  - type: http
+    method: POST
+    path: /api/v1/chat/send-message
+    headers:
+      Accept: application/json
+      Content-Type: multipart/form-data
+      Authorization: "Bearer {{chat_login_token}}"
+    body:
+      chat_id: "{{first_chat_id}}"
+      content: faker.sentence:image_message_content
+      type: image
+      images:
+        - "file:/Users/andrewmaster/www/sandbox/test-avatar.png"
+        - "file:/Users/andrewmaster/www/sandbox/test-avatar.png"
+    extract:
+      image_message_id: data.response.id
+
+  # CHAT — получение сообщений чата
+  - type: http
+    method: GET
+    path: /api/v1/chat/get-messages?chatId={{first_chat_id}}&perPage=100&page=1
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{chat_login_token}}"
+
+  # CHAT — отметка сообщения как прочитанного
+  - type: http
+    method: PUT
+    path: /api/v1/chat/mark-as-read
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{chat_login_token}}"
+    body:
+      message_id: "{{sent_message_id}}"
+
+  # CHAT — удаление сообщения
+  - type: http
+    method: DELETE
+    path: /api/v1/chat/delete-message
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{chat_login_token}}"
+    body:
+      chat_id: "{{first_chat_id}}"
+      message_id: "{{image_message_id}}"
+
+  # CHAT — удаление чата
+  - type: http
+    method: DELETE
+    path: /api/v1/chat/delete-chat
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{chat_login_token}}"
+    body:
+      chat_id: "{{first_chat_id}}"

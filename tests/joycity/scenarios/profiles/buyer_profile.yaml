@@ -49,7 +49,7 @@ steps:
       Accept: application/json
       Authorization: "Bearer {{login_token}}"
 
-  # PUT /api/v1/buyer/profile/update - обновить профиль
+  # PUT /api/v1/buyer/profile/update - обновить имя и фамилию
   - type: http
     method: PUT
     path: /api/v1/buyer/profile/update
@@ -60,13 +60,61 @@ steps:
     body:
       name: "Иван"
       surname: "Иванов"
+
+  # PUT /api/v1/buyer/profile/update - обновить телефон
+  - type: http
+    method: PUT
+    path: /api/v1/buyer/profile/update
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
       phone_number: phone_number:updated_phone
-      organization_name: "ООО Продавец"
       phone_country_code: "RU"
+
+  # PUT /api/v1/buyer/profile/update - обновить организацию
+  - type: http
+    method: PUT
+    path: /api/v1/buyer/profile/update
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      organization_name: "ООО Продавец"
+
+  # PUT /api/v1/buyer/profile/update - обновить адрес
+  - type: http
+    method: PUT
+    path: /api/v1/buyer/profile/update
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
       address: "ул. Пушкина, д. 1"
       city: "Москва"
       country: "Россия"
+
+  # PUT /api/v1/buyer/profile/update - обновить описание
+  - type: http
+    method: PUT
+    path: /api/v1/buyer/profile/update
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
       description: "Описание продавца и услуг"
+
+  # GET /api/v1/buyer/profile/self - проверить финальное состояние
+  - type: http
+    method: GET
+    path: /api/v1/buyer/profile/self
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
 
   # POST /api/v1/buyer/profile/upload-avatar - загрузить аватар
   - type: http

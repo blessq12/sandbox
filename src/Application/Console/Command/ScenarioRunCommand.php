@@ -43,6 +43,9 @@ class ScenarioRunCommand extends Command
         $scenarioName = (string) $input->getArgument('scenario');
         $saveReport = $input->getOption('save-report');
 
+        // Очищаем папку result перед запуском
+        $this->cleanResultDirectory();
+
         $project = $this->registry->get($projectName);
         if (!$project) {
             $io->error('Проект не найден: ' . $projectName);
@@ -166,5 +169,59 @@ class ScenarioRunCommand extends Command
         $success = $result['ok'] ? '✓' : '✗';
         $io->text("Результат: {$success}");
         return $result['ok'] ? Command::SUCCESS : Command::FAILURE;
+    }
+
+    /**
+     * Очистка папки result перед запуском тестов
+     */
+    private function cleanResultDirectory(): void
+    {
+        $resultDir = __DIR__ . '/../../../../result';
+
+        if (!is_dir($resultDir)) {
+            return;
+        }
+
+        $items = glob($resultDir . '/*');
+        if ($items === false) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            if (is_dir($item)) {
+                $this->removeDirectory($item);
+            } else {
+                @unlink($item);
+            }
+        }
+    }
+
+    /**
+     * Рекурсивное удаление директории
+     */
+    private function removeDirectory(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $items = glob($dir . '/{,.}*', GLOB_BRACE);
+        if ($items === false) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            if (basename($item) === '.' || basename($item) === '..') {
+                continue;
+            }
+
+            if (is_dir($item)) {
+                $this->removeDirectory($item);
+            } else {
+                @unlink($item);
+            }
+        }
+
+        @rmdir($dir);
     }
 }

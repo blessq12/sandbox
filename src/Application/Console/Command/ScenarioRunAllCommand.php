@@ -41,13 +41,19 @@ class ScenarioRunAllCommand extends Command
         $projectName = (string) $input->getArgument('project');
         $saveReports = $input->getOption('save-reports');
 
+        // Очищаем папку result перед запуском
+        $this->cleanResultDirectory();
+
         $project = $this->registry->get($projectName);
         if (!$project) {
             $io->error('Проект не найден: ' . $projectName);
             return Command::FAILURE;
         }
 
-        $scenarios = $this->loader->loadFromProject($project);
+        // Загружаем все сценарии из групп (новый подход)
+        $root = $this->loader->loadGroupedScenarios($project);
+        $scenarios = $root->getScenarios();
+
         if (empty($scenarios)) {
             $io->warning('Сценарии не найдены для проекта: ' . $projectName);
             return Command::SUCCESS;
@@ -76,7 +82,8 @@ class ScenarioRunAllCommand extends Command
         $successfulScenarios = 0;
         $failedScenarios = 0;
 
-        foreach ($scenarios as $scenarioName => $scenario) {
+        foreach ($scenarios as $scenario) {
+            $scenarioName = $scenario->name;
             $io->newLine();
             $io->text("<info>Выполнение сценария: {$scenarioName}</info>");
 
@@ -230,5 +237,59 @@ class ScenarioRunAllCommand extends Command
         $io->text("Общий результат: {$overallSuccess}");
 
         return $failedScenarios === 0 ? Command::SUCCESS : Command::FAILURE;
+    }
+
+    /**
+     * Очистка папки result перед запуском тестов
+     */
+    private function cleanResultDirectory(): void
+    {
+        $resultDir = __DIR__ . '/../../../../result';
+
+        if (!is_dir($resultDir)) {
+            return;
+        }
+
+        $items = glob($resultDir . '/*');
+        if ($items === false) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            if (is_dir($item)) {
+                $this->removeDirectory($item);
+            } else {
+                @unlink($item);
+            }
+        }
+    }
+
+    /**
+     * Рекурсивное удаление директории
+     */
+    private function removeDirectory(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $items = glob($dir . '/{,.}*', GLOB_BRACE);
+        if ($items === false) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            if (basename($item) === '.' || basename($item) === '..') {
+                continue;
+            }
+
+            if (is_dir($item)) {
+                $this->removeDirectory($item);
+            } else {
+                @unlink($item);
+            }
+        }
+
+        @rmdir($dir);
     }
 }

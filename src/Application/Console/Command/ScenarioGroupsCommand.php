@@ -8,12 +8,11 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-#[AsCommand(name: 'scenario:list', description: 'Список сценариев проекта')]
-class ScenarioListCommand extends Command
+#[AsCommand(name: 'scenario:groups', description: 'Список групп сценариев проекта')]
+class ScenarioGroupsCommand extends Command
 {
     public function __construct(
         private readonly ProjectRegistry $registry,
@@ -25,14 +24,12 @@ class ScenarioListCommand extends Command
     protected function configure(): void
     {
         $this->addArgument('project', InputArgument::REQUIRED, 'Имя проекта');
-        $this->addOption('group', 'g', InputOption::VALUE_OPTIONAL, 'Фильтр по группе');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
         $projectName = (string) $input->getArgument('project');
-        $groupFilter = $input->getOption('group');
 
         $project = $this->registry->get($projectName);
         if (!$project) {
@@ -40,26 +37,28 @@ class ScenarioListCommand extends Command
             return Command::FAILURE;
         }
 
-        if ($groupFilter) {
-            $scenarios = $this->repository->findByGroup($project, (string) $groupFilter);
-            $io->section("Сценарии проекта: {$projectName} (группа: {$groupFilter})");
-        } else {
-            $scenarios = $this->repository->findAll($project);
-            $io->section("Сценарии проекта: {$projectName}");
-        }
+        $groupPaths = $this->repository->getGroupPaths($project);
 
-        if (empty($scenarios)) {
-            $io->info('Сценарии не найдены');
+        if (empty($groupPaths)) {
+            $io->info('Группы не найдены. Все сценарии находятся в корневой директории.');
             return Command::SUCCESS;
         }
 
+        $io->section("Группы сценариев проекта: {$projectName}");
+
         $rows = [];
-        foreach ($scenarios as $scenario) {
-            $rows[] = [$scenario->name, count($scenario->steps)];
+        foreach ($groupPaths as $groupPath) {
+            $metadata = $this->repository->getGroupMetadata($project, $groupPath);
+            if ($metadata) {
+                $rows[] = [
+                    $groupPath,
+                    $metadata['scenarios_count'],
+                    !empty($metadata['subgroups']) ? implode(', ', $metadata['subgroups']) : '-'
+                ];
+            }
         }
 
-        $io->table(['Имя', 'Шагов'], $rows);
-        $io->text('Всего сценариев: ' . count($scenarios));
+        $io->table(['Группа', 'Сценариев', 'Подгруппы'], $rows);
 
         return Command::SUCCESS;
     }

@@ -46,7 +46,7 @@ steps:
       Accept: application/json
       Authorization: "Bearer {{login_token}}"
 
-  # PUT /api/v1/client/profile/update - обновить профиль
+  # PUT /api/v1/client/profile/update - обновить имя и фамилию
   - type: http
     method: PUT
     path: /api/v1/client/profile/update
@@ -55,12 +55,50 @@ steps:
       Content-Type: application/json
       Authorization: "Bearer {{login_token}}"
     body:
-      name: faker.firstName:updated_name
-      surname: faker.lastName:updated_surname
-      phone_number: phone_number:client_phone
-      organization_name: faker.company:updated_org
+      name: first_name:updated_name
+      surname: surname:updated_surname
+
+  # PUT /api/v1/client/profile/update - обновить телефон
+  - type: http
+    method: PUT
+    path: /api/v1/client/profile/update
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      phone_number: phone_number:updated_phone
       phone_country_code: "RU"
+
+  # PUT /api/v1/client/profile/update - обновить организацию
+  - type: http
+    method: PUT
+    path: /api/v1/client/profile/update
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      organization_name: faker.company:updated_org
+
+  # PUT /api/v1/client/profile/update - обновить telegram
+  - type: http
+    method: PUT
+    path: /api/v1/client/profile/update
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
       telegram: faker.userName:updated_telegram
+
+  # GET /api/v1/client/profile/self - проверить финальное состояние
+  - type: http
+    method: GET
+    path: /api/v1/client/profile/self
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
 
   # POST /api/v1/client/profile/upload-avatar - загрузить аватар
   - type: http
