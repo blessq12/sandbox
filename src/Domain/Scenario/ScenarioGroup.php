@@ -77,9 +77,9 @@ class ScenarioGroup implements ScenarioComponent
     {
         foreach ($this->children as $child) {
             if ($child->isGroup() && $child->getName() === $name) {
-                return $child;
+                return $child instanceof ScenarioGroup ? $child : null;
             }
-            if ($child->isGroup()) {
+            if ($child instanceof ScenarioGroup) {
                 $found = $child->findGroup($name);
                 if ($found) {
                     return $found;
@@ -97,7 +97,8 @@ class ScenarioGroup implements ScenarioComponent
     {
         $paths = [$this->getPath()];
         foreach ($this->children as $child) {
-            if ($child->isGroup()) {
+            if ($child instanceof self) {
+                /** @var ScenarioGroup $child */
                 $paths = array_merge($paths, $child->getAllGroupPaths());
             }
         }
