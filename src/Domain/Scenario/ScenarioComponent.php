@@ -34,3 +34,4 @@ interface ScenarioComponent
      */
     public function isGroup(): bool;
 }
+

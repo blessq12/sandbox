@@ -1,0 +1,99 @@
+steps:
+  # Регистрация manager
+  - type: http
+    method: POST
+    path: /api/v1/auth/register
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: faker.email:manager_email
+      password: faker.password:manager_password
+      confirm_password: faker.password:manager_password
+      phone_number: phone_number:manager_phone
+      organization_name: faker.company:manager_org
+      surname: surname:manager_surname
+      name: first_name:manager_name
+      role: manager
+      phone_country_code: "RU"
+      telegram: faker.userName:manager_telegram
+      device_fingerprint: optional-device-fp
+    extract:
+      manager_user_id: data.response.uuid
+      manager_access_token: data.response.access_token
+
+  # Логин manager
+  - type: http
+    method: POST
+    path: /api/v1/auth/login
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: "{{manager_email}}"
+      password: "{{manager_password}}"
+      role: manager
+      device_fingerprint: optional-device-fp
+    extract:
+      login_token: data.response.access_token
+
+  # GET /api/v1/manager/settings/self - получить настройки
+  - type: http
+    method: GET
+    path: /api/v1/manager/settings/self
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+
+  # GET /api/v1/manager/settings/charges - получить тарифы
+  - type: http
+    method: GET
+    path: /api/v1/manager/settings/charges
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+
+  # PUT /api/v1/manager/settings/charges-update - обновить тарифы
+  - type: http
+    method: PUT
+    path: /api/v1/manager/settings/charges-update
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      usd_charge: 5
+      cny_charge: 7
+
+  # PUT /api/v1/manager/settings/set-categories - установить категории
+  - type: http
+    method: PUT
+    path: /api/v1/manager/settings/set-categories
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      category_ids: [7, 8, 9]
+
+  # PUT /api/v1/manager/settings/update - обновить настройки
+  - type: http
+    method: PUT
+    path: /api/v1/manager/settings/update
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      enable_notifications: true
+      currency: "USD"
+      application_language: "en"
+      chat_language: "en"
+
+  # GET /api/v1/manager/settings/self - проверить финальное состояние
+  - type: http
+    method: GET
+    path: /api/v1/manager/settings/self
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"

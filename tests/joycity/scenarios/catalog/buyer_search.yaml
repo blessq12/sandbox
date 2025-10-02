@@ -1,0 +1,73 @@
+steps:
+  # Регистрация buyer
+  - type: http
+    method: POST
+    path: /api/v1/auth/register
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: faker.email:buyer_email
+      password: faker.password:buyer_password
+      confirm_password: faker.password:buyer_password
+      phone_number: phone_number:buyer_phone
+      organization_name: faker.company:buyer_org
+      surname: surname:buyer_surname
+      name: first_name:buyer_name
+      role: buyer
+      phone_country_code: "RU"
+      telegram: faker.userName:buyer_telegram
+      device_fingerprint: optional-device-fp
+      country: "Россия"
+      city: "Москва"
+      address: "ул. Тестовая, д. 1"
+    extract:
+      buyer_user_id: data.response.uuid
+      buyer_access_token: data.response.access_token
+
+  # Логин buyer
+  - type: http
+    method: POST
+    path: /api/v1/auth/login
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: "{{buyer_email}}"
+      password: "{{buyer_password}}"
+      role: buyer
+      device_fingerprint: optional-device-fp
+    extract:
+      login_token: data.response.access_token
+
+  # GET /api/v1/buyer/search/hints - получить подсказки поиска
+  - type: http
+    method: GET
+    path: /api/v1/buyer/search/hints?q=тест
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+
+  # GET /api/v1/buyer/search/popular - популярные товары
+  - type: http
+    method: GET
+    path: /api/v1/buyer/search/popular
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+
+  # GET /api/v1/buyer/search/random - случайные товары
+  - type: http
+    method: GET
+    path: /api/v1/buyer/search/random
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+
+  # GET /api/v1/buyer/search/search - поиск товаров
+  - type: http
+    method: GET
+    path: /api/v1/buyer/search/search?query=тестовый товар&category_id=1&min_price=100&max_price=10000&limit=20&offset=0
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"

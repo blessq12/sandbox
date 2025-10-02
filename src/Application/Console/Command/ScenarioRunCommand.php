@@ -52,11 +52,49 @@ class ScenarioRunCommand extends Command
             return Command::FAILURE;
         }
 
+        // 1) Пытаемся по-старому (только корневая директория)
         $scenarios = $this->loader->loadFromProject($project);
         $scenario = $scenarios[$scenarioName] ?? null;
+
+        // 2) Новый способ: ищем во всех группах (включая подпапки)
         if (!$scenario) {
-            $io->error('Сценарий не найден: ' . $scenarioName);
-            return Command::FAILURE;
+            $root = $this->loader->loadGroupedScenarios($project);
+            $all = $root->getScenarios();
+
+            // Поддержка: exact name (client_profile)
+            foreach ($all as $candidate) {
+                if ($candidate->name === $scenarioName) {
+                    $scenario = $candidate;
+                    break;
+                }
+            }
+
+            // Поддержка: path match (profiles/client_profile)
+            if (!$scenario) {
+                // Собираем карту path->Scenario через обход групп
+                $stack = [$root];
+                while (!$scenario && ($group = array_pop($stack))) {
+                    foreach ($group->getChildren() as $child) {
+                        if ($child->isGroup()) {
+                            $stack[] = $child;
+                            continue;
+                        }
+                        // leaf
+                        $path = $child->getPath();
+                        $scenariosInLeaf = $child->getScenarios();
+                        $leafScenario = $scenariosInLeaf[0] ?? null;
+                        if ($leafScenario && ($path === $scenarioName)) {
+                            $scenario = $leafScenario;
+                            break 2;
+                        }
+                    }
+                }
+            }
+
+            if (!$scenario) {
+                $io->error('Сценарий не найден: ' . $scenarioName);
+                return Command::FAILURE;
+            }
         }
 
         $context = [];

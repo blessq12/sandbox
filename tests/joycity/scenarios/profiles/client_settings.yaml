@@ -1,0 +1,79 @@
+steps:
+  # Регистрация client
+  - type: http
+    method: POST
+    path: /api/v1/auth/register
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: faker.email:client_email
+      password: faker.password:client_password
+      confirm_password: faker.password:client_password
+      phone_number: phone_number:client_phone
+      organization_name: faker.company:client_org
+      surname: surname:client_surname
+      name: first_name:client_name
+      role: client
+      phone_country_code: "+7"
+      telegram: faker.userName:client_telegram
+      device_fingerprint: optional-device-fp
+    extract:
+      client_user_id: data.response.uuid
+      client_access_token: data.response.access_token
+
+  # Логин client
+  - type: http
+    method: POST
+    path: /api/v1/auth/login
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: "{{client_email}}"
+      password: "{{client_password}}"
+      role: client
+      device_fingerprint: optional-device-fp
+    extract:
+      login_token: data.response.access_token
+
+  # GET /api/v1/client/settings/self - получить настройки
+  - type: http
+    method: GET
+    path: /api/v1/client/settings/self
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+
+  # PUT /api/v1/client/settings/set-categories - установить категории
+  - type: http
+    method: PUT
+    path: /api/v1/client/settings/set-categories
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      category_ids: [4, 5, 6]
+
+  # PUT /api/v1/client/settings/update - обновить настройки
+  - type: http
+    method: PUT
+    path: /api/v1/client/settings/update
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: "Bearer {{login_token}}"
+    body:
+      enable_notifications: true
+      currency: "USD"
+      application_language: "en"
+      chat_language: "en"
+
+  # GET /api/v1/client/settings/self - проверить финальное состояние
+  - type: http
+    method: GET
+    path: /api/v1/client/settings/self
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"

@@ -63,3 +63,4 @@ class ScenarioGroupsCommand extends Command
         return Command::SUCCESS;
     }
 }
+

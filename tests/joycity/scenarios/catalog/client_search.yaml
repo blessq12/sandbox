@@ -1,0 +1,70 @@
+steps:
+  # Регистрация client
+  - type: http
+    method: POST
+    path: /api/v1/auth/register
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: faker.email:client_email
+      password: faker.password:client_password
+      confirm_password: faker.password:client_password
+      phone_number: phone_number:client_phone
+      organization_name: faker.company:client_org
+      surname: surname:client_surname
+      name: first_name:client_name
+      role: client
+      phone_country_code: "+7"
+      telegram: faker.userName:client_telegram
+      device_fingerprint: optional-device-fp
+    extract:
+      client_user_id: data.response.uuid
+      client_access_token: data.response.access_token
+
+  # Логин client
+  - type: http
+    method: POST
+    path: /api/v1/auth/login
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+    body:
+      email: "{{client_email}}"
+      password: "{{client_password}}"
+      role: client
+      device_fingerprint: optional-device-fp
+    extract:
+      login_token: data.response.access_token
+
+  # GET /api/v1/client/search/hints - получить подсказки поиска
+  - type: http
+    method: GET
+    path: /api/v1/client/search/hints?q=тест
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+
+  # GET /api/v1/client/search/popular - популярные товары
+  - type: http
+    method: GET
+    path: /api/v1/client/search/popular
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+
+  # GET /api/v1/client/search/random - случайные товары
+  - type: http
+    method: GET
+    path: /api/v1/client/search/random
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"
+
+  # GET /api/v1/client/search/search - поиск товаров
+  - type: http
+    method: GET
+    path: /api/v1/client/search/search?query=тестовый товар&category_id=2&min_price=500&max_price=50000&limit=10&offset=0
+    headers:
+      Accept: application/json
+      Authorization: "Bearer {{login_token}}"

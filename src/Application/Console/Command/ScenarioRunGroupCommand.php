@@ -134,3 +134,4 @@ class ScenarioRunGroupCommand extends Command
         return $failedScenarios === 0 ? Command::SUCCESS : Command::FAILURE;
     }
 }
+
